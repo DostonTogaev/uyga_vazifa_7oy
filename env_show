@@ -1,5 +1,5 @@
 DEBUG=xxx
-SECRET_KEY=xx
+SECRET_KEY=xxx
 NAME=xxx
 USER=xx
 PASSWORD=xx
