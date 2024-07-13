@@ -394,6 +394,7 @@
                                         </button>
                                     </div>
                                 </div>
+
                                 <div class="col-auto px-2 px-md-3"><a class="btn btn-sm btn-primary" href="#!"><span
                                         class="fas fa-cart-plus me-sm-2"></span><span class="d-none d-sm-inline-block">Add To Cart</span></a>
                                 </div>
@@ -404,6 +405,9 @@
                             </div>
                         </div>
                     </div>
+                   <a href="{% url 'edit_product' product.id %}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">edit</a>
+                                <a href="{% url 'delete_product' product.id %}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">delete</a>
+
                     <div class="row">
                         <div class="col-12">
                             <div class="overflow-hidden mt-4">

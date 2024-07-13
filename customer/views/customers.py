@@ -11,11 +11,45 @@ from django.db.models import Q, TextField
 from customer.forms import CustomerModelForm
 from customer.models import Customer
 import json
+from django.views.generic import TemplateView
+from django.views import View
 
 # Create your views here.
 
+class CustomerTemplateView(TemplateView):
+    template_name = 'customer/customer-list.html'
 
-def customers(request):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customers = Customer.objects.all()
+        context['customers'] = customers
+        return context
+
+class CustomerListView(View):
+    def get(self, request):
+        search_query = request.GET.get('search')
+        if search_query:
+            customer_list = Customer.objects.filter(
+                Q(full_name__icontains=search_query) | Q(address__icontains=search_query))
+        else:
+            customer_list = Customer.objects.all()
+
+        page = request.GET.get('page', '')
+        paginator = Paginator(customer_list, 3)
+        try:
+            customer_list = paginator.page(page)
+        except PageNotAnInteger:
+            customer_list = paginator.page(1)
+        except EmptyPage:
+            customer_list = paginator.page(paginator.num_pages)
+        context = {
+            'customer_list': customer_list,
+
+        }
+        return render(request, 'customer/customer-list.html', context)
+
+
+'''def customers(request):
     search_query = request.GET.get('search')
     if search_query:
         customer_list = Customer.objects.filter(
@@ -35,15 +69,46 @@ def customers(request):
         'customer_list': customer_list,
 
     }
-    return render(request, 'customer/customer-list.html', context)
+    return render(request, 'customer/customer-list.html', context)'''
 
-def customer_detail(request, customer_id):
+class CustomerDetailView(View):
+    def get(self, request, customer_id):
+        customer = Customer.objects.get(id=customer_id)
+        context = {
+            'customer': customer
+        }
+        return render(request, 'customer/customer-detail.html', context)
+'''def customer_detail(request, customer_id):
     customer = Customer.objects.get(id=customer_id)
     context = {
         'customer': customer
     }
-    return render(request, 'customer/customer-detail.html', context)
-def add_customer(request):
+    return render(request, 'customer/customer-detail.html', context)'''
+
+class CustomerAddTemplateView(TemplateView):
+    template_name = 'customer/add-customer.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customer = Customer.objects.get(id=self.kwargs['customer_id'])
+        context['customer'] = CustomerModelForm(instance=customer)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data()
+
+class CustomerAddView(View):
+    def get(self, request):
+        form = CustomerModelForm()
+        return render(request, 'customer/add-customer.html', {'form': form})
+    def post(self, request):
+        form = CustomerModelForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('customers')
+
+
+'''def add_customer(request):
     form = CustomerModelForm()
     if request.method == 'POST':
         form = CustomerModelForm(request.POST, request.FILES)
@@ -55,10 +120,16 @@ def add_customer(request):
         'form': form,
     }
 
-    return render(request, 'customer/add-customer.html', context)
+    return render(request, 'customer/add-customer.html', context)'''
 
+class CustomerDeleteView(View):
+    def get(self, request, pk):
+        customer = Customer.objects.get(id=pk)
+        if customer:
+            customer.delete()
+            return redirect('customers')
 
-def delete_customer(request, pk):
+'''def delete_customer(request, pk):
     customer = Customer.objects.get(id=pk)
     if customer:
         customer.delete()
@@ -67,10 +138,22 @@ def delete_customer(request, pk):
             messages.SUCCESS,
             'Customer successfully deleted'
         )
-        return redirect('customers')
+        return redirect('customers')'''
 
+class CustomerEditView(View):
+    def get(self, request, pk):
+        customer = Customer.objects.get(id=pk)
+        form = CustomerModelForm(instance=customer)
+        return render(request, 'customer/update-customer.html', {'form': form})
 
-def edit_customer(request, pk):
+    def post(self, request, pk):
+        customer = Customer.objects.get(id=pk)
+        form = CustomerModelForm(request.POST, instance=customer)
+
+        if form.is_valid():
+            form.save()
+            return redirect('customer_detail', pk)
+'''def edit_customer(request, pk):
     customer = Customer.objects.get(id=pk)
     form = CustomerModelForm(instance=customer)
     if request.method == 'POST':
@@ -82,7 +165,7 @@ def edit_customer(request, pk):
     context = {
         'form': form,
     }
-    return render(request, 'customer/update-customer.html', context)
+    return render(request, 'customer/update-customer.html', context)'''
 
 def export_data(request):
     format = request.GET.get('format', 'csv')
