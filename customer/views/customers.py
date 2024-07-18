@@ -1,14 +1,18 @@
 import csv
 
 import writer
+from django.conf import settings
 from django.contrib import messages
+from django.core.mail import send_mail
 from openpyxl import Workbook
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.db.models import Q, TextField
-from customer.forms import CustomerModelForm
+
+from app import forms
+from customer.forms import CustomerModelForm, ShareMail
 from customer.models import Customer
 import json
 from django.views.generic import TemplateView
@@ -211,3 +215,20 @@ def export_data(request):
         response.content = 'Bad request'
 
     return response
+
+def share_mail(request):
+    sent = False
+    if request.method == 'Post':
+        form = ShareMail(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            body = form.cleaned_data['body']
+            form_email = settings.DEFAULT_FROM_EMAIL
+            recipients = form.cleaned_data['recipients']
+            send_mail(subject, body, form_email, recipients, fail_silently=False)
+            sent = True
+
+    else:
+        form = ShareMail()
+
+    return render(request, 'email/share_email.html', {'form': form, 'sent': sent})

@@ -1,7 +1,7 @@
 from django import forms
 
 from customer.models import Customer, User
-
+from customer.custom_field import MultiEmailField
 
 class CustomerModelForm(forms.ModelForm):
     class Meta:
@@ -59,3 +59,8 @@ class UserModelForm(forms.ModelForm):
     class Meta:
         model = User
         exclude = ()
+
+class ShareMail(forms.Form):
+    subject = forms.CharField(max_length=255)
+    body = forms.Textarea()
+    recipient = MultiEmailField()
